@@ -1,3 +1,5 @@
+from matplotlib.colors import Normalize
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import numpy as np
 import random
@@ -5,8 +7,11 @@ import random
 
 def main():
     # set params
-    global alpha, gamma, epsilon, x_grid, y_grid, state_num, hole, goal, action_num, q_value
-    global goal_reward, drop_reward, move_reward
+    global alpha, gamma, epsilon
+    global x_grid, y_grid, state_num, hole, goal, subgoal, action_num, directions
+    global q_value
+    global goal_reward, subgoal_reward, drop_reward, move_reward
+    global goal_count
     
     alpha = 0.3 # learning rate
     gamma = 0.9 # discount factor
@@ -15,31 +20,54 @@ def main():
     x_grid = 5
     y_grid = 5
     state_num = x_grid * y_grid
-    hole = [6, 7, 18, 19, 20]
+    hole = [6, 7, 19, 20]
     goal = 25
+    subgoal = 13
     action_num = 4 # up, down, left, right
+    directions = {
+        1: '↑',
+        2: '↓',
+        3: '←',
+        4: '→',
+    }
 
     q_value = [[0, s, a] for s in list(range(1, state_num+1)) for a in list(range(1, action_num+1))] # action value function
-    episode = np.linspace(1, 3000,3000)
+    episode = np.linspace(1, 3000, 3000)
     s = 1
 
     goal_reward = 100
+    subgoal_reward = 20
     drop_reward = -10
     move_reward = -1
+
+    goal_count = 0
+    subgoal_count = 0
 
     #run q-learning argorhythm
     fig, ax = plt.subplots()
     ax.plot()
     
     for episode in episode:
-        fig.suptitle(f'episode {int(episode)}')
+        fig.suptitle('episode {0} (goal: {1}, subgoal: {2})'.format(int(episode), int(goal_count), int(subgoal_count)))
         draw(s, ax)
         action = select_action(s)
         ss = move(s, action)
         reward = calc_reward(ss)
         q_value[4*(s-1) + action-1][0] += alpha*(reward + gamma*q_value[4*(ss-1) + action-1][0] - q_value[4*(s-1) + action-1][0])
-        s = 1 if ss == goal else ss # relocate
-        plt.pause(0.2)
+        if ss == goal:
+            s = 1 # relocate
+            goal_count += 1
+            ax.text(1, 1, 'GOAL!', fontsize=20, ha='right', va='top', color='red', transform=ax.transAxes)
+            if goal_count in [1, 10, 100]: # for report
+                plt.pause(5)
+                # ax.texts.clear()
+        elif ss == subgoal:
+            subgoal_count += 1
+        # elif ss in hole:
+        #     s = 1
+        else:
+            s = ss
+        plt.pause(0.005)
         # time.sleep(0.5)
     
     plt.show()
@@ -58,10 +86,10 @@ def draw(s, ax):
     for i in range(x_grid):
         for j in range(y_grid):
             index = j*y_grid + i+1
-            if index in hole:
-                color = 'black'
-            else:
-                color = 'white'
+            max_q_value = max([item for item in q_value if item[1] == index])
+            maxq = max_q_value[0]
+            maxa = int(max_q_value[2])
+            color = 'black' if index in hole else 'white'
 
             square = plt.Rectangle((i,j), 1, 1, edgecolor='black', facecolor=color)
             ax.add_patch(square)
@@ -69,8 +97,10 @@ def draw(s, ax):
             center_x = i + 0.5
             center_y = j + 0.5
 
-            if i == (np.mod(goal+4, x_grid)) and j == np.floor_divide(goal, y_grid)-1:
-                ax.text(center_x, center_y, 'G', color='gray', ha='center', va='center')
+            ax.text(center_x, j, round(maxq, 2), color='gray', ha='center', va='bottom')
+            ax.text(center_x, j+0.2, directions[maxa], color='gray', ha='center', va='bottom')
+            ax.text(center_x, center_y, 'G', color='black', ha='center', va='center') if index == goal else None
+            ax.text(center_x, center_y, 'SG', color='black', ha='center', va='center') if index == subgoal else None
 
             if i+1 == x_pos and j+1 == y_pos: # plot current position
                 ax.plot(center_x, center_y, 'o', color = 'green')
@@ -138,10 +168,16 @@ def calc_reward(ss):
     reward = 0
     if ss == goal:
         reward = goal_reward
+    elif ss == subgoal:
+        reward = subgoal_reward
     elif ss in hole:
         reward = drop_reward
     else:
         reward = move_reward
+        # x_pos, y_pos = locate(ss)
+        # x_pos_goal, y_pos_goal = locate(goal)
+        # distance = abs(x_pos - x_pos_goal) + abs(y_pos - y_pos_goal)
+        # reward = move_reward + 0.1/distance
     
     return reward
 

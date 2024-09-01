@@ -20,6 +20,7 @@ def main():
     x_grid = 5
     y_grid = 5
     state_num = x_grid * y_grid
+    # hole = []
     hole = [6, 7, 19, 20]
     goal = 25
     subgoal = 13
@@ -32,7 +33,7 @@ def main():
     }
 
     q_value = [[0, s, a] for s in list(range(1, state_num+1)) for a in list(range(1, action_num+1))] # action value function
-    episode = np.linspace(1, 3000, 3000)
+    episode = np.linspace(1, 10000, 10000)
     s = 1
 
     goal_reward = 100
@@ -45,11 +46,12 @@ def main():
 
     ### run q-learning argorhythm ###
     fig, ax = plt.subplots()
-    ax.plot()
+    # ax.plot() #############################################################
+    pause_sec = 3 ###########################################################
     
     for episode in episode:
         fig.suptitle('episode {0} (goal: {1}, subgoal: {2})'.format(int(episode), int(goal_count), int(subgoal_count)))
-        draw(s, ax)
+        # draw(s, ax) #######################################################
         action = select_action(s)
         ss = move(s, action)
         reward = calc_reward(ss)
@@ -57,9 +59,11 @@ def main():
         if ss == goal:
             s = 1 # relocate
             goal_count += 1
+            ax.plot() #######################################################
+            draw(s, ax) #####################################################
             ax.text(1, 1, 'GOAL!', fontsize=20, ha='right', va='top', color='red', transform=ax.transAxes)
             if goal_count in [1, 10, 100]: # for report
-                plt.pause(5)
+                plt.pause(pause_sec)
                 # ax.texts.clear()
         elif ss == subgoal:
             subgoal_count += 1
@@ -67,8 +71,13 @@ def main():
         #     s = 1
         else:
             s = ss
-        plt.pause(0.005)
+            if episode in [1, 3000, 6000, 9000]:
+                ax.plot() ##################################################
+                draw(s, ax) ################################################
+                plt.pause(pause_sec) ##############################################
+        # plt.pause(0.002)
         # time.sleep(0.5)
+        print(f'episode: {episode}')
     
     plt.show()
 

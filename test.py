@@ -22,5 +22,12 @@ def ij():
             index = j*5 + i+1
             print(i, j, index)
 
+def list():
+    path = [1, 1, 2]
+    num = 1
+    paths = []
+    paths.append(path)
+    print(paths)
+
 if __name__ == "__main__":
-    ij()
+    list()

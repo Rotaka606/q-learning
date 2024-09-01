@@ -131,19 +131,19 @@ def is_movable(s, action):
     x_pos, y_pos = locate(s)
 
     if action == 1: # up
-        if y_pos+1 <= y_grid and x_pos+(y_pos)*y_grid not in hole:
+        if y_pos+1 <= y_grid:
             flag = True
 
     elif action == 2: # down
-        if y_pos-1 >= 1 and x_pos+(y_pos-2)*y_grid not in hole:
+        if y_pos-1 >= 1:
             flag = True
     
     elif action == 3: # left
-        if x_pos-1 >= 1 and x_pos-1+(y_pos-1)*y_grid not in hole:
+        if x_pos-1 >= 1:
             flag = True
     
     elif action == 4: # right
-        if x_pos+1 <= y_grid and x_pos+1+(y_pos-1)*y_grid not in hole:
+        if x_pos+1 <= y_grid:
             flag = True
 
     return flag

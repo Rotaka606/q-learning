@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 # import time
+import csv
 
 def main():
     ### set params ###
@@ -33,8 +34,8 @@ def main():
     }
 
     q_value = [[0, s, a] for s in list(range(1, state_num+1)) for a in list(range(1, action_num+1))] # action value function
-    episode = np.linspace(1, 100000, 100000)
-    stop_points = [1, 3000, 50000, 100000]
+    episode = np.linspace(1, 10000, 10000)
+    stop_points = [1, 1000, 5000, 10000]
     s = 1
 
     goal_reward = 100
@@ -45,18 +46,23 @@ def main():
     goal_count = 0
     subgoal_count = 0
 
+    path = []
+    paths = []
+
     ### run q-learning argorhythm ###
     fig, ax = plt.subplots()
     # ax.plot() #############################################################
     pause_sec = 3 ###########################################################
     
     for episode in episode:
+        path.append(s)
         fig.suptitle('episode {0} (goal: {1}, subgoal: {2})'.format(int(episode), int(goal_count), int(subgoal_count)))
         # draw(s, ax) #######################################################
         action = select_action(s)
         ss = move(s, action)
         reward = calc_reward(ss)
         q_value[4*(s-1) + action-1][0] += alpha*(reward + gamma*q_value[4*(ss-1) + action-1][0] - q_value[4*(s-1) + action-1][0])
+
         if ss == goal:
             s = 1 # relocate
             goal_count += 1
@@ -64,12 +70,16 @@ def main():
             draw(s, ax) #####################################################
             ax.text(1, 1, 'GOAL!', fontsize=20, ha='right', va='top', color='red', transform=ax.transAxes)
             if goal_count in [1, 10, 100]: # for report
+                paths.append(path)
                 plt.pause(pause_sec)
                 # ax.texts.clear()
+            path = []
+
         elif ss == subgoal:
             subgoal_count += 1
         # elif ss in hole:
         #     s = 1
+
         else:
             s = ss
             if episode in stop_points:
@@ -81,6 +91,7 @@ def main():
         print(f'episode: {episode}')
     
     plt.show()
+    save_path(paths)
 
 def locate(s):
     x_pos = np.mod(s+4, x_grid) + 1
@@ -141,19 +152,19 @@ def is_movable(s, action):
     x_pos, y_pos = locate(s)
 
     if action == 1: # up
-        if y_pos+1 <= y_grid and x_pos+(y_pos)*y_grid not in hole:
+        if y_pos+1 <= y_grid:
             flag = True
 
     elif action == 2: # down
-        if y_pos-1 >= 1 and x_pos+(y_pos-2)*y_grid not in hole:
+        if y_pos-1 >= 1:
             flag = True
     
     elif action == 3: # left
-        if x_pos-1 >= 1 and x_pos-1+(y_pos-1)*y_grid not in hole:
+        if x_pos-1 >= 1:
             flag = True
     
     elif action == 4: # right
-        if x_pos+1 <= y_grid and x_pos+1+(y_pos-1)*y_grid not in hole:
+        if x_pos+1 <= y_grid:
             flag = True
 
     return flag
@@ -190,6 +201,11 @@ def calc_reward(ss):
         # reward = move_reward + 0.1/distance
     
     return reward
+
+def save_path(paths):
+    with open('log.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerows(paths)
 
 if __name__ == "__main__":
     main()

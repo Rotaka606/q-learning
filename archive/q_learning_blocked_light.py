@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 # import time
-import datetime
-import csv
 
 def main():
     ### set params ###
@@ -35,8 +33,8 @@ def main():
     }
 
     q_value = [[0, s, a] for s in list(range(1, state_num+1)) for a in list(range(1, action_num+1))] # action value function
-    episode = np.linspace(1, 10000, 10000)
-    stop_points = [1, 1000, 5000, 10000]
+    episode = np.linspace(1, 100000, 100000)
+    stop_points = [1, 3000, 50000, 100000]
     s = 1
 
     goal_reward = 100
@@ -47,28 +45,18 @@ def main():
     goal_count = 0
     subgoal_count = 0
 
-    initial_episode = 1
-    path = [initial_episode]
-    paths = []
-    q_table = []
-    q_tables = []
-    dt = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
-
     ### run q-learning argorhythm ###
     fig, ax = plt.subplots()
     # ax.plot() #############################################################
-    pause_sec = 1 ###########################################################
+    pause_sec = 3 ###########################################################
     
     for episode in episode:
-        path.append(s)
         fig.suptitle('episode {0} (goal: {1}, subgoal: {2})'.format(int(episode), int(goal_count), int(subgoal_count)))
         # draw(s, ax) #######################################################
-
         action = select_action(s)
         ss = move(s, action)
         reward = calc_reward(ss)
         q_value[4*(s-1) + action-1][0] += alpha*(reward + gamma*q_value[4*(ss-1) + action-1][0] - q_value[4*(s-1) + action-1][0])
-
         if ss == goal:
             s = 1 # relocate
             goal_count += 1
@@ -76,38 +64,23 @@ def main():
             draw(s, ax) #####################################################
             ax.text(1, 1, 'GOAL!', fontsize=20, ha='right', va='top', color='red', transform=ax.transAxes)
             if goal_count in [1, 10, 100]: # for report
-                paths.append(path)
                 plt.pause(pause_sec)
                 # ax.texts.clear()
-                fig.savefig(f'log/{dt}_{int(episode)}_goal.png')
-                
-            initial_episode = int(episode) + 1
-            path = [initial_episode]
-
         elif ss == subgoal:
-            subgoal_count += 1            
+            subgoal_count += 1
         # elif ss in hole:
         #     s = 1
-
         else:
             s = ss
             if episode in stop_points:
-                q_table.append(int(episode))
-                q_table.append(list(q_value))
-                q_tables.append(q_table)
-                q_table = []
-
                 ax.plot() ##################################################
                 draw(s, ax) ################################################
                 plt.pause(pause_sec) #######################################
-                fig.savefig(f'log/{dt}_{int(episode)}.png')
         # plt.pause(0.002)
         # time.sleep(0.5)
         print(f'episode: {episode}')
     
     plt.show()
-    save_path(dt, paths)
-    save_q_tables(dt, q_tables)
 
 def locate(s):
     x_pos = np.mod(s+4, x_grid) + 1
@@ -168,19 +141,19 @@ def is_movable(s, action):
     x_pos, y_pos = locate(s)
 
     if action == 1: # up
-        if y_pos+1 <= y_grid:
+        if y_pos+1 <= y_grid and x_pos+(y_pos)*y_grid not in hole:
             flag = True
 
     elif action == 2: # down
-        if y_pos-1 >= 1:
+        if y_pos-1 >= 1 and x_pos+(y_pos-2)*y_grid not in hole:
             flag = True
     
     elif action == 3: # left
-        if x_pos-1 >= 1:
+        if x_pos-1 >= 1 and x_pos-1+(y_pos-1)*y_grid not in hole:
             flag = True
     
     elif action == 4: # right
-        if x_pos+1 <= y_grid:
+        if x_pos+1 <= y_grid and x_pos+1+(y_pos-1)*y_grid not in hole:
             flag = True
 
     return flag
@@ -217,18 +190,6 @@ def calc_reward(ss):
         # reward = move_reward + 0.1/distance
     
     return reward
-
-def save_path(dt, paths):
-    with open(f'log/{dt}_log.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['initial episode', 'paths'])
-        writer.writerows(paths)
-
-def save_q_tables(dt, q_tables):
-    with open(f'log/{dt}_q-table.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(['episode', 'q table'])
-        writer.writerows(q_tables)
 
 if __name__ == "__main__":
     main()

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 # import time
+import datetime
 import csv
 
 def main():
@@ -46,18 +47,23 @@ def main():
     goal_count = 0
     subgoal_count = 0
 
-    path = []
+    initial_episode = 1
+    path = [initial_episode]
     paths = []
+    q_table = []
+    q_tables = []
+    dt = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
     ### run q-learning argorhythm ###
     fig, ax = plt.subplots()
     # ax.plot() #############################################################
-    pause_sec = 3 ###########################################################
+    pause_sec = 1 ###########################################################
     
     for episode in episode:
         path.append(s)
         fig.suptitle('episode {0} (goal: {1}, subgoal: {2})'.format(int(episode), int(goal_count), int(subgoal_count)))
         # draw(s, ax) #######################################################
+
         action = select_action(s)
         ss = move(s, action)
         reward = calc_reward(ss)
@@ -73,25 +79,35 @@ def main():
                 paths.append(path)
                 plt.pause(pause_sec)
                 # ax.texts.clear()
-            path = []
+                fig.savefig(f'log/{dt}_{int(episode)}_goal.png')
+                
+            initial_episode = int(episode) + 1
+            path = [initial_episode]
 
         elif ss == subgoal:
-            subgoal_count += 1
+            subgoal_count += 1            
         # elif ss in hole:
         #     s = 1
 
         else:
             s = ss
             if episode in stop_points:
+                q_table.append(int(episode))
+                q_table.append(list(q_value))
+                q_tables.append(q_table)
+                q_table = []
+
                 ax.plot() ##################################################
                 draw(s, ax) ################################################
                 plt.pause(pause_sec) #######################################
+                fig.savefig(f'log/{dt}_{int(episode)}.png')
         # plt.pause(0.002)
         # time.sleep(0.5)
         print(f'episode: {episode}')
     
     plt.show()
-    save_path(paths)
+    save_path(dt, paths)
+    save_q_tables(dt, q_tables)
 
 def locate(s):
     x_pos = np.mod(s+4, x_grid) + 1
@@ -202,10 +218,17 @@ def calc_reward(ss):
     
     return reward
 
-def save_path(paths):
-    with open('log.csv', 'w', newline='') as file:
+def save_path(dt, paths):
+    with open(f'log/{dt}_log.csv', 'w', newline='') as file:
         writer = csv.writer(file)
+        writer.writerow(['initial episode', 'paths'])
         writer.writerows(paths)
+
+def save_q_tables(dt, q_tables):
+    with open(f'log/{dt}_q-table.csv', 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['episode', 'q table'])
+        writer.writerows(q_tables)
 
 if __name__ == "__main__":
     main()

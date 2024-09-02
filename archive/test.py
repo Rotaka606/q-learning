@@ -22,12 +22,22 @@ def ij():
             index = j*5 + i+1
             print(i, j, index)
 
-def list():
+def list_test():
     path = [1, 1, 2]
     num = 1
     paths = []
     paths.append(path)
     print(paths)
 
+def nums():
+    numlist = list(range(1,5))
+    nums = [10, 20]
+    nums.append(30)
+    print(numlist+nums)
+    nums = [3]
+    print(nums)
+    
+
 if __name__ == "__main__":
-    list()
+    # nums()
+    q_value()
